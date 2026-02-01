@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Goosenumbs - Classic</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Courier+Prime&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier Prime', 'VT323', monospace;
+            background: #0a0a0a;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        /* Animated CRT Scanlines */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 200%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(255, 255, 255, 0.03) 0px,
+                rgba(0, 0, 0, 0.05) 1px,
+                transparent 2px,
+                transparent 3px
+            );
+            pointer-events: none;
+            z-index: 1;
+            animation: scanlines 8s linear infinite;
+        }
+
+        @keyframes scanlines {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-50%); }
+        }
+
+        /* Animated CRT Static Noise */
+        body::after {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.08;
+            pointer-events: none;
+            z-index: 2;
+            animation: noise 0.2s steps(16) infinite;
+        }
+
+        @keyframes noise {
+            0% { transform: translate(0, 0); }
+            10% { transform: translate(-5%, -5%); }
+            20% { transform: translate(-10%, 5%); }
+            30% { transform: translate(5%, -10%); }
+            40% { transform: translate(-5%, 15%); }
+            50% { transform: translate(-15%, 5%); }
+            60% { transform: translate(10%, 0); }
+            70% { transform: translate(0, 10%); }
+            80% { transform: translate(-10%, 0); }
+            90% { transform: translate(10%, 5%); }
+            100% { transform: translate(0, 0); }
+        }
+
+        /* CRT Vignette */
+        .crt-vignette {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.7) 100%);
+            pointer-events: none;
+            z-index: 3;
+        }
+
+        /* Menu Bar */
+        .menu-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 28px;
+            background: white;
+            border-bottom: 2px solid black;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10px;
+            font-size: 14px;
+            z-index: 1000;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .menu-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .menu-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'VT323', monospace;
+            font-size: 16px;
+        }
+
+        .clock-separator {
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes blinkClock {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+
+        .menu-item {
+            cursor: pointer;
+            padding: 2px 8px;
+        }
+
+        .menu-item:hover {
+            background: black;
+            color: white;
+        }
+
+        .apple-logo {
+            font-size: 18px;
+        }
+
+        /* Main Window */
+        .mac-window {
+            position: relative;
+            width: 90vw;
+            max-width: 900px;
+            height: 75vh;
+            background: white;
+            border: 2px solid black;
+            box-shadow: 
+                4px 4px 0px rgba(0,0,0,0.3),
+                inset 0 0 0 1px white;
+            z-index: 10;
+            display: none; /* Hidden by default */
+            transform-origin: center;
+        }
+
+        .mac-window.open {
+            display: block;
+            animation: windowOpen 0.3s ease-out forwards;
+        }
+
+        .mac-window.closing {
+            animation: windowClose 0.3s ease-in forwards;
+        }
+
+        @keyframes windowOpen {
+            0% {
+                opacity: 0;
+                transform: scale(0.8) translateY(20px);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        @keyframes windowClose {
+            0% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0.8) translateY(20px);
+            }
+        }
+
+        /* Desktop Icon */
+        .desktop-icon {
+            position: absolute;
+            width: 120px;
+            top: 100px;
+            left: 80px;
+            text-align: center;
+            cursor: pointer;
+            z-index: 5;
+            user-select: none;
+        }
+
+        .desktop-icon.dragging {
+            cursor: grabbing;
+        }
+
+        .desktop-icon.dragging .icon-image {
+            border: 2px dashed rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .icon-image {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 10px;
+            background: transparent;
+            border: 2px solid transparent;
+            padding: 10px;
+            transition: none;
+        }
+
+        .icon-image svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .icon-label {
+            color: white;
+            font-size: 14px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 8px;
+            border-radius: 2px;
+            font-family: 'Courier Prime', monospace;
+        }
+
+        /* Title Bar */
+        .title-bar {
+            height: 24px;
+            background: white;
+            border-bottom: 2px solid black;
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            position: relative;
+        }
+
+        .title-bar-pattern {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            background: repeating-linear-gradient(
+                90deg,
+                black 0px,
+                black 1px,
+                white 1px,
+                white 2px
+            );
+        }
+
+        .window-title {
+            position: relative;
+            z-index: 2;
+            font-size: 14px;
+            font-weight: bold;
+            margin: 0 auto;
+            background: white;
+            padding: 0 10px;
+        }
+
+        .close-box {
+            position: relative;
+            z-index: 2;
+            width: 14px;
+            height: 14px;
+            border: 2px solid black;
+            background: white;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+
+        .close-box:hover {
+            background: #ddd;
+        }
+
+        .close-box:active {
+            background: black;
+        }
+
+        /* Content Area */
+        .content {
+            height: calc(100% - 24px - 60px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            background: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Scanlines subtle effect */
+        .content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.03),
+                rgba(0, 0, 0, 0.03) 1px,
+                transparent 1px,
+                transparent 3px
+            );
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .logo-section {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            margin-bottom: 40px;
+            margin-top: -20px; /* Move the whole section up */
+        }
+
+        .logo-container {
+            width: 207px; /* 180px * 1.15 = 207px */
+            height: 207px;
+            margin: 0 auto 30px;
+            position: relative;
+        }
+
+        .logo-3d {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            /* Smooth rotation underneath */
+            animation: rotateSmooth 4s linear infinite;
+            /* But sample it at 16fps for posterize effect */
+            animation-timing-function: steps(64); /* 4 seconds * 16fps = 64 steps */
+        }
+
+        .logo-3d svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        @keyframes rotateSmooth {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .brand-name {
+            font-size: 72px;
+            font-weight: bold;
+            letter-spacing: 4px;
+            color: black;
+            text-shadow: 3px 3px 0px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+            font-family: 'Press Start 2P', 'VT323', monospace;
+        }
+
+        .coming-soon {
+            position: relative;
+            z-index: 2;
+            font-size: 36px;
+            font-weight: bold;
+            color: black;
+            margin: 30px 0;
+            text-align: center;
+            font-family: 'VT323', monospace;
+            letter-spacing: 3px;
+            min-height: 50px;
+        }
+
+        .typewriter-text {
+            display: inline-block;
+        }
+
+        @keyframes typeAndDelete {
+            0% { content: 'COMING SOON'; }
+            35% { content: 'COMING SOON'; }
+            40% { content: 'COMING SOON '; }
+            45% { content: 'COMING SOON M'; }
+            50% { content: 'COMING SOON MA'; }
+            55% { content: 'COMING SOON MAY'; }
+            60% { content: 'COMING SOON MAYB'; }
+            65% { content: 'COMING SOON MAYBE'; }
+            75% { content: 'COMING SOON MAYBE'; }
+            78% { content: 'COMING SOON MAYB'; }
+            81% { content: 'COMING SOON MAY'; }
+            84% { content: 'COMING SOON MA'; }
+            87% { content: 'COMING SOON M'; }
+            90% { content: 'COMING SOON '; }
+            93% { content: 'COMING SOON'; }
+            100% { content: 'COMING SOON'; }
+        }
+
+        .typewriter-text::before {
+            content: 'COMING SOON';
+            animation: typeAndDelete 8s ease-in-out infinite;
+        }
+
+        .cursor-blink {
+            display: inline-block;
+            width: 3px;
+            height: 32px;
+            background: black;
+            margin-left: 8px;
+            animation: blink 1s step-end infinite;
+            vertical-align: middle;
+        }
+
+        @keyframes blink {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+
+        /* Marquee Strip */
+        .marquee-strip {
+            position: absolute;
+            bottom: 60px;
+            left: 0;
+            right: 0;
+            height: 40px;
+            background: black;
+            color: white;
+            overflow: hidden;
+            border-top: 2px solid black;
+            border-bottom: 2px solid black;
+            z-index: 3;
+            display: flex;
+            align-items: center;
+        }
+
+        .marquee-content {
+            display: inline-block;
+            white-space: nowrap;
+            padding-left: 100%;
+            animation: marquee 30s linear infinite;
+        }
+
+        .marquee-text {
+            font-size: 18px;
+            font-family: 'VT323', monospace;
+        }
+
+        @keyframes marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-100%); }
+        }
+
+        /* Status Bar */
+        .status-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: #e0e0e0;
+            border-top: 2px solid black;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            font-size: 14px;
+            padding: 0 20px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 2px solid black;
+            padding: 8px 16px;
+            background: white;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.2);
+        }
+
+        .pixel-dot {
+            width: 8px;
+            height: 8px;
+            background: black;
+            animation: blink 2s step-end infinite;
+        }
+
+        @media (max-width: 768px) {
+            .mac-window {
+                width: 95vw;
+                height: 85vh;
+            }
+
+            .desktop-icon {
+                width: 100px;
+                top: 80px;
+                left: 40px;
+            }
+
+            .icon-image {
+                width: 70px;
+                height: 70px;
+                padding: 8px;
+            }
+
+            .icon-label {
+                font-size: 12px;
+            }
+
+            .logo-container {
+                width: 138px; /* 120px * 1.15 = 138px */
+                height: 138px;
+                margin-bottom: 25px;
+            }
+
+            .brand-name {
+                font-size: 28px;
+                letter-spacing: 2px;
+            }
+            
+            .coming-soon {
+                font-size: 24px;
+            }
+            
+            .marquee-text {
+                font-size: 14px;
+            }
+
+            .status-bar {
+                flex-wrap: wrap;
+                height: auto;
+                padding: 10px;
+                gap: 10px;
+            }
+
+            .status-item {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+
+            .menu-bar {
+                font-size: 12px;
+                gap: 10px;
+            }
+
+            .content {
+                padding: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .desktop-icon {
+                width: 80px;
+                top: 60px;
+                left: 20px;
+            }
+
+            .icon-image {
+                width: 60px;
+                height: 60px;
+                padding: 6px;
+            }
+
+            .icon-label {
+                font-size: 11px;
+                padding: 2px 6px;
+            }
+
+            .logo-container {
+                width: 115px; /* 100px * 1.15 = 115px */
+                height: 115px;
+                margin-bottom: 15px;
+            }
+
+            .brand-name {
+                font-size: 20px;
+                letter-spacing: 1px;
+            }
+
+            .coming-soon {
+                font-size: 18px;
+            }
+
+            .cursor-blink {
+                height: 20px;
+            }
+
+            .marquee-strip {
+                height: 35px;
+                bottom: 50px;
+            }
+
+            .marquee-text {
+                font-size: 14px;
+            }
+
+            .status-bar {
+                height: 50px;
+            }
+
+            .menu-bar {
+                height: 24px;
+                font-size: 11px;
+                gap: 8px;
+            }
+
+            .menu-left {
+                gap: 10px;
+            }
+
+            .menu-right {
+                font-size: 12px;
+                gap: 6px;
+            }
+
+            .title-bar {
+                height: 20px;
+            }
+
+            .window-title {
+                font-size: 12px;
+            }
+
+            .close-box {
+                width: 12px;
+                height: 12px;
+            }
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const desktopIcon = document.getElementById('desktop-icon');
+            const macWindow = document.getElementById('mac-window');
+            const closeBox = document.getElementById('close-box');
+            const menuTime = document.getElementById('menu-time');
+            const menuDate = document.getElementById('menu-date');
+            
+            // Update clock
+            function updateClock() {
+                const now = new Date();
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const seconds = now.getSeconds();
+                
+                // Blink separator based on seconds
+                const separator = seconds % 2 === 0 ? ':' : ' ';
+                menuTime.textContent = `${hours}${separator}${minutes}`;
+                
+                // Format date
+                const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                const dayName = days[now.getDay()];
+                const monthName = months[now.getMonth()];
+                const date = now.getDate();
+                
+                menuDate.textContent = `${dayName} ${monthName} ${date}`;
+            }
+            
+            // Update immediately and then every second
+            updateClock();
+            setInterval(updateClock, 1000);
+            
+            let isDragging = false;
+            let hasMoved = false;
+            let currentX;
+            let currentY;
+            let initialX;
+            let initialY;
+            let xOffset = 0;
+            let yOffset = 0;
+
+            // Desktop icon dragging
+            desktopIcon.addEventListener('mousedown', dragStart);
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', dragEnd);
+
+            // Touch events for mobile
+            desktopIcon.addEventListener('touchstart', dragStart);
+            document.addEventListener('touchmove', drag);
+            document.addEventListener('touchend', dragEnd);
+
+            function dragStart(e) {
+                if (e.type === 'touchstart') {
+                    initialX = e.touches[0].clientX - xOffset;
+                    initialY = e.touches[0].clientY - yOffset;
+                } else {
+                    initialX = e.clientX - xOffset;
+                    initialY = e.clientY - yOffset;
+                }
+
+                if (e.target === desktopIcon || desktopIcon.contains(e.target)) {
+                    isDragging = true;
+                    hasMoved = false;
+                }
+            }
+
+            function drag(e) {
+                if (isDragging) {
+                    e.preventDefault();
+                    
+                    if (e.type === 'touchmove') {
+                        currentX = e.touches[0].clientX - initialX;
+                        currentY = e.touches[0].clientY - initialY;
+                    } else {
+                        currentX = e.clientX - initialX;
+                        currentY = e.clientY - initialY;
+                    }
+
+                    xOffset = currentX;
+                    yOffset = currentY;
+
+                    // Only show dragging state if actually moved
+                    if (Math.abs(currentX) > 3 || Math.abs(currentY) > 3) {
+                        hasMoved = true;
+                        desktopIcon.classList.add('dragging');
+                    }
+
+                    setTranslate(currentX, currentY, desktopIcon);
+                }
+            }
+
+            function dragEnd(e) {
+                if (isDragging) {
+                    isDragging = false;
+                    desktopIcon.classList.remove('dragging');
+                }
+            }
+
+            function setTranslate(xPos, yPos, el) {
+                el.style.transform = `translate(${xPos}px, ${yPos}px)`;
+            }
+
+            // Double click to open window
+            let clickTimer = null;
+            desktopIcon.addEventListener('click', function(e) {
+                // Don't open if we were dragging
+                if (hasMoved) {
+                    hasMoved = false;
+                    return;
+                }
+                
+                if (clickTimer === null) {
+                    clickTimer = setTimeout(() => {
+                        clickTimer = null;
+                    }, 300);
+                } else {
+                    clearTimeout(clickTimer);
+                    clickTimer = null;
+                    openWindow();
+                }
+            });
+
+            // Open window function
+            function openWindow() {
+                desktopIcon.style.visibility = 'hidden';
+                macWindow.classList.add('open');
+            }
+
+            // Close window
+            closeBox.addEventListener('click', function() {
+                macWindow.classList.remove('open');
+                macWindow.classList.add('closing');
+                
+                setTimeout(() => {
+                    macWindow.classList.remove('closing');
+                    desktopIcon.style.visibility = 'visible';
+                }, 300);
+            });
+        });
+    </script>
+</head>
+<body>
+    <!-- CRT Effects -->
+    <div class="crt-vignette"></div>
+    
+    <!-- Desktop Icon -->
+    <div id="desktop-icon" class="desktop-icon">
+        <div class="icon-image">
+            <svg width="100%" height="100%" viewBox="0 0 1000 1000" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;">
+                <path d="M731.314,446.249c1.625,-0.108 3.264,-0.163 4.917,-0.163c40.285,0 72.992,32.706 72.992,72.992c0,37.357 -28.125,68.197 -64.337,72.483l0.171,1.435c-51.907,6.143 -92.736,48.659 -96.259,101.321c-0.164,2.447 -0.247,4.915 -0.247,7.403c0,2.134 0.061,4.253 0.182,6.356c0.266,4.636 0.821,9.195 1.647,13.66c-3.812,56.981 -51.301,102.084 -109.241,102.084c-51.422,0 -94.612,-35.526 -106.343,-83.353c-0.137,-0.667 -0.281,-1.331 -0.43,-1.993c-0.15,-0.664 -0.305,-1.326 -0.467,-1.985c-11.731,-47.826 -54.921,-83.353 -106.343,-83.353c-11.024,-0 -21.67,1.633 -31.709,4.67c-2.259,0.683 -4.487,1.438 -6.682,2.261c-2.208,0.828 -4.382,1.725 -6.52,2.689c-6.021,1.61 -12.348,2.468 -18.873,2.468c-40.285,0 -72.992,-32.706 -72.992,-72.992c0,-26.903 14.587,-50.427 36.276,-63.086l0.557,-0.317l0.555,-0.319c40.41,-23.368 67.624,-67.059 67.624,-117.056c0,-24.502 -6.536,-47.489 -17.958,-67.313l0.079,-0.045c-9.009,-16.234 -14.141,-34.912 -14.141,-54.779c0,-62.442 50.695,-113.137 113.137,-113.137c37.328,0 70.458,18.117 91.069,46.03c0.483,0.743 0.979,1.476 1.487,2.199c0.509,0.725 1.031,1.44 1.566,2.144c13.333,17.579 34.445,28.942 58.189,28.942c19.278,0 36.821,-7.49 49.874,-19.716l0.019,0.021c13.026,-12.083 30.464,-19.475 49.615,-19.475c40.285,0 72.992,32.706 72.992,72.992c0,40.285 -32.706,72.992 -72.992,72.992c-19.096,0 -36.49,-7.349 -49.504,-19.371l-0.019,0.02c-13.014,-12.022 -30.407,-19.371 -49.504,-19.371c-24.684,0 -46.523,12.279 -59.736,31.058l-0.469,-0.329c-13.712,19.488 -33.419,34.461 -56.43,42.228l0.102,0.274c-42.584,15.835 -75.053,52.541 -84.949,97.659c-2.532,9.232 -3.884,18.951 -3.884,28.982c0,9.88 1.311,19.456 3.77,28.563c0.936,4.35 2.081,8.623 3.426,12.807l0.775,-0.313c16.256,40.11 55.605,68.431 101.517,68.431c19.196,0 37.245,-4.951 52.938,-13.644l0.72,-0.403l0.717,-0.408c15.693,-8.693 33.742,-13.644 52.938,-13.644c2.115,0 4.216,0.06 6.302,0.179l0.01,-0.169c2.086,0.119 4.187,0.179 6.302,0.179c23.005,0 44.362,-7.11 61.992,-19.252l-0.453,-0.632c9.032,-6.646 14.897,-17.35 14.897,-29.413c0,-8.14 -2.67,-15.661 -7.182,-21.734c-6.653,-8.955 -17.311,-14.762 -29.313,-14.762l-52.554,0c-20.143,0 -36.496,-16.353 -36.496,-36.496c0,-20.143 16.353,-36.496 36.496,-36.496l190.176,0Zm-398.023,123.695c-0.196,-0.61 -0.399,-1.216 -0.61,-1.819c-0.212,-0.605 -0.431,-1.205 -0.658,-1.803c0.203,0.607 0.41,1.212 0.621,1.816c0.212,0.604 0.427,1.206 0.647,1.806Z" style="fill:#fff;stroke:#000;stroke-opacity:0;stroke-width:1px;"/>
+            </svg>
+        </div>
+        <div class="icon-label">Goosenumbs</div>
+    </div>
+    
+    <!-- Menu Bar -->
+    <div class="menu-bar">
+        <div class="menu-left">
+            <div class="apple-logo">◼</div>
+            <div class="menu-item">File</div>
+            <div class="menu-item">Edit</div>
+            <div class="menu-item">View</div>
+            <div class="menu-item">Help</div>
+        </div>
+        <div class="menu-right">
+            <span id="menu-date"></span>
+            <span id="menu-time"></span>
+        </div>
+    </div>
+
+    <!-- Main Window -->
+    <div id="mac-window" class="mac-window">
+        <!-- Title Bar -->
+        <div class="title-bar">
+            <div class="title-bar-pattern"></div>
+            <div id="close-box" class="close-box"></div>
+            <div class="window-title">Goosenumbs</div>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <div class="logo-section">
+                <div class="logo-container">
+                    <div class="logo-3d">
+                        <svg width="100%" height="100%" viewBox="0 0 1000 1000" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;">
+                            <path d="M731.314,446.249c1.625,-0.108 3.264,-0.163 4.917,-0.163c40.285,0 72.992,32.706 72.992,72.992c0,37.357 -28.125,68.197 -64.337,72.483l0.171,1.435c-51.907,6.143 -92.736,48.659 -96.259,101.321c-0.164,2.447 -0.247,4.915 -0.247,7.403c0,2.134 0.061,4.253 0.182,6.356c0.266,4.636 0.821,9.195 1.647,13.66c-3.812,56.981 -51.301,102.084 -109.241,102.084c-51.422,0 -94.612,-35.526 -106.343,-83.353c-0.137,-0.667 -0.281,-1.331 -0.43,-1.993c-0.15,-0.664 -0.305,-1.326 -0.467,-1.985c-11.731,-47.826 -54.921,-83.353 -106.343,-83.353c-11.024,-0 -21.67,1.633 -31.709,4.67c-2.259,0.683 -4.487,1.438 -6.682,2.261c-2.208,0.828 -4.382,1.725 -6.52,2.689c-6.021,1.61 -12.348,2.468 -18.873,2.468c-40.285,0 -72.992,-32.706 -72.992,-72.992c0,-26.903 14.587,-50.427 36.276,-63.086l0.557,-0.317l0.555,-0.319c40.41,-23.368 67.624,-67.059 67.624,-117.056c0,-24.502 -6.536,-47.489 -17.958,-67.313l0.079,-0.045c-9.009,-16.234 -14.141,-34.912 -14.141,-54.779c0,-62.442 50.695,-113.137 113.137,-113.137c37.328,0 70.458,18.117 91.069,46.03c0.483,0.743 0.979,1.476 1.487,2.199c0.509,0.725 1.031,1.44 1.566,2.144c13.333,17.579 34.445,28.942 58.189,28.942c19.278,0 36.821,-7.49 49.874,-19.716l0.019,0.021c13.026,-12.083 30.464,-19.475 49.615,-19.475c40.285,0 72.992,32.706 72.992,72.992c0,40.285 -32.706,72.992 -72.992,72.992c-19.096,0 -36.49,-7.349 -49.504,-19.371l-0.019,0.02c-13.014,-12.022 -30.407,-19.371 -49.504,-19.371c-24.684,0 -46.523,12.279 -59.736,31.058l-0.469,-0.329c-13.712,19.488 -33.419,34.461 -56.43,42.228l0.102,0.274c-42.584,15.835 -75.053,52.541 -84.949,97.659c-2.532,9.232 -3.884,18.951 -3.884,28.982c0,9.88 1.311,19.456 3.77,28.563c0.936,4.35 2.081,8.623 3.426,12.807l0.775,-0.313c16.256,40.11 55.605,68.431 101.517,68.431c19.196,0 37.245,-4.951 52.938,-13.644l0.72,-0.403l0.717,-0.408c15.693,-8.693 33.742,-13.644 52.938,-13.644c2.115,0 4.216,0.06 6.302,0.179l0.01,-0.169c2.086,0.119 4.187,0.179 6.302,0.179c23.005,0 44.362,-7.11 61.992,-19.252l-0.453,-0.632c9.032,-6.646 14.897,-17.35 14.897,-29.413c0,-8.14 -2.67,-15.661 -7.182,-21.734c-6.653,-8.955 -17.311,-14.762 -29.313,-14.762l-52.554,0c-20.143,0 -36.496,-16.353 -36.496,-36.496c0,-20.143 16.353,-36.496 36.496,-36.496l190.176,0Zm-398.023,123.695c-0.196,-0.61 -0.399,-1.216 -0.61,-1.819c-0.212,-0.605 -0.431,-1.205 -0.658,-1.803c0.203,0.607 0.41,1.212 0.621,1.816c0.212,0.604 0.427,1.206 0.647,1.806Z" style="fill:#000;stroke:#000;stroke-opacity:0;stroke-width:1px;"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="brand-name">Goosenumbs</div>
+            </div>
+
+            <div class="coming-soon">
+                <span class="typewriter-text"></span><span class="cursor-blink"></span>
+            </div>
+        </div>
+
+        <!-- Marquee Strip -->
+        <div class="marquee-strip">
+            <div class="marquee-content">
+                <span class="marquee-text">shop accessories, tshirts, keychains, random stuff that don't matter most of the time until that one random time when it does but it don't matter, anyways you can</span>
+            </div>
+        </div>
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div class="status-item">
+                <span class="pixel-dot"></span>
+            </div>
+            <div class="status-item">
+                <span>Classic OS v1.0</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
